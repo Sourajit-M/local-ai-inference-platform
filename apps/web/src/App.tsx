@@ -6,15 +6,36 @@ function App() {
   const [response, setResponse] = useState("");
 
   const sendMessage = async () => {
-    const res = await axios.post(
-      "http://localhost:8000/api/chat",
+    setResponse("")
+
+    const res = await fetch(
+      "http://localhost:8000/api/chat/stream",
       {
-        message,
+        method : "POST",
+        headers : {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message,
+        }),
       }
     );
 
-    setResponse(res.data.response);
-  };
+    const reader = res.body?.getReader()
+
+    if(!reader) return;
+
+    const decoder = new TextDecoder()
+
+    while(true){
+      const { done, value } = await reader.read()
+
+      if(done) break;
+
+      const chunk = decoder.decode(value)
+      setResponse((prev) => prev+chunk)
+    }
+  }
 
   return (
     <div
