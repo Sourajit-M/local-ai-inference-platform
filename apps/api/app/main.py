@@ -2,9 +2,14 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.chat import router as chat_router
+from app.db.database import Base, engine
+
+from app.api.routes.auth import router as auth_router
 
 import ollama
 from app.config.settings import settings
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
   title="Local AI Inference Platform",
@@ -21,7 +26,11 @@ app.add_middleware(
 
 app.include_router(chat_router, prefix="/api")
 
-
+app.include_router(
+  auth_router,
+  prefix="/api/auth",
+  tags=["auth"],
+)
 
 @app.get("/health")
 def health():
