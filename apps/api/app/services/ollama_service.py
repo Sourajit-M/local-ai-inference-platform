@@ -1,10 +1,11 @@
 import ollama 
+from app.core.constants import MODEL_NAME
 
 class OllamaService:
   @staticmethod
   def chat(message: str) -> str:
     response = ollama.chat(
-      model = "qwen2.5:3b",
+      model = MODEL_NAME,
       messages = [
         {
           "role" : "user",
@@ -18,7 +19,7 @@ class OllamaService:
   @staticmethod
   def stream_chat(message: str):
     stream = ollama.chat(
-      model = "qwen2.5:3b",
+      model = MODEL_NAME,
       messages = [
         {
           "role" : "user",

@@ -3,6 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.chat import router as chat_router
 
+import ollama
+from app.config.settings import settings
+
 app = FastAPI(
   title="Local AI Inference Platform",
   version="0.1.0",
@@ -22,4 +25,18 @@ app.include_router(chat_router, prefix="/api")
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+  try:
+    models = ollama.list()
+
+    return {
+      "status" : "healthy",
+      "model": settings.MODEL_NAME,
+      "ollama": "connected",
+      "models": models,
+    }
+  
+  except Exception as e:
+    return{
+      "status" : "unhealthy",
+      "error": str(e)
+    }
