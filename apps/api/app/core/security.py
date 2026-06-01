@@ -4,12 +4,11 @@ from datetime import timezone
 
 import bcrypt
 
-from jose import jwt
+from jose import jwt, JWTError
 
 from app.config.settings import settings
 
 def hash_password(password: str) -> str:
-    # bcrypt requires bytes, so encode the password string
     pwd_bytes = password.encode('utf-8')
     salt = bcrypt.gensalt()
     hashed = bcrypt.hashpw(pwd_bytes, salt)
@@ -35,3 +34,15 @@ def create_access_token(data: dict):
     algorithm=settings.JWT_ALGORITHM,
   )
 
+def verify_access_token(token: str):
+  try:
+    payload = jwt.decode(
+      token,
+      settings.JWT_SECRET_KEY,
+      algorithms=[settings.JWT_ALGORITHM]
+    )
+    
+    return payload
+  
+  except JWTError:
+    return None

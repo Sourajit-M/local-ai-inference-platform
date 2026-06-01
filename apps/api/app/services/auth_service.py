@@ -8,10 +8,11 @@ class AuthService:
   @staticmethod
   def register(db: Session, email: str, password: str):
     existing_user = (
-                    db.query(User)
-                    .filter(User.email == email)
-                    .first()
-                  )
+      db.query(User)
+      .filter(User.email == email)
+      .first()
+    )
+    
     if existing_user:
       return None
     

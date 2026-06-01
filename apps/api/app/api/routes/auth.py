@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
 from app.db.dependencies import get_db
+from app.api.dependencies import get_current_user
 
 from app.schemas.user import (
   UserCreate,
@@ -60,3 +61,7 @@ def login(
     access_token=token,
     token_type="bearer"
   )
+
+@router.get("/me")
+def me(current_user=Depends(get_current_user)):
+  return current_user
