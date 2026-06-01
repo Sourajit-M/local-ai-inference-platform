@@ -1,6 +1,8 @@
 from sqlalchemy import String
 from sqlalchemy.orm import Mapped
 from sqlalchemy.orm import mapped_column
+from sqlalchemy.orm import relationship
+
 from app.db.database import Base
 
 class User(Base):
@@ -21,4 +23,10 @@ class User(Base):
   hashed_password: Mapped[str] = mapped_column(
     String,
     nullable=False,
+  )
+
+  chat_sessions = relationship(
+    "ChatSession",
+    backref="user",
+    cascade="all, delete-orphan"
   )
