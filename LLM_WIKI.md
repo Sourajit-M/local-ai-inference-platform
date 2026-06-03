@@ -1,12 +1,12 @@
 # Local AI Inference Platform - Project Wiki
 
-Welcome to the **Local AI Inference Platform**! This wiki acts as the comprehensive source of truth for the codebase architecture, tech stack, and execution guidelines. It is designed to help developer agents and human collaborators onboard and understand the project quickly.
+Welcome to the **Local AI Inference Platform**! This wiki acts as the comprehensive source of truth for the codebase architecture, tech stack, database schemas, and execution guidelines. It is designed to help developer agents and human collaborators onboard and understand the project quickly.
 
 ---
 
 ## 🏗️ Architecture Overview
 
-The project is structured as a monorepo containing a high-performance Python FastAPI backend and a responsive React frontend. It leverages local inference engines (specifically **Ollama**) to stream large language model completions securely and privately on the host machine.
+The project is structured as a monorepo containing a high-performance, asynchronous Python FastAPI backend and a responsive React frontend. It leverages local inference engines (specifically **Ollama**) to stream large language model completions securely and privately on the host machine.
 
 ### Core System Diagram
 
@@ -17,11 +17,13 @@ graph TD
     end
 
     subgraph API ["Backend API Layer (apps/api)"]
-        RT["FastAPI Router (app/api/routes)"]
+        RT["FastAPI Routes (app/api/routes)"]
+        DEP["Dependencies - JWT & DB (app/api/dependencies)"]
         SC["Pydantic Schemas (app/schemas)"]
-        SVC["Ollama Service (app/services)"]
+        SVC["Services - Auth & Chat (app/services)"]
         CFG["Config/Settings (app/config)"]
-        DB["SQLAlchemy DB (app/db)"]
+        DB["SQLAlchemy Session (app/db)"]
+        MD["DB Models - SQLite (app/models)"]
     end
 
     subgraph LLM ["Local Inference Layer"]
@@ -30,8 +32,12 @@ graph TD
     end
 
     FE -->|HTTP Post / SSE Stream| RT
+    RT -->|Verify Bearer JWT / Get DB| DEP
+    DEP -->|Injects DB Session| RT
     RT -->|Request/Response Validation| SC
-    RT -->|Delegates Logic| SVC
+    RT -->|Delegates Actions| SVC
+    SVC -->|CRUD Operations| MD
+    MD -->|Saves state to local_ai.db| DB
     CFG -->|Loads Environment| API
     SVC -->|Connects via httpx client| OL
     OL -->|Runs model| QW
@@ -47,13 +53,33 @@ local-ai-inference-platform/
 │   ├── api/                   # Backend Application
 │   │   ├── app/               # FastAPI Application Core
 │   │   │   ├── api/           # API Routers & Route Endpoints
+│   │   │   │   ├── routes/    # Endpoint Groupings
+│   │   │   │   │   ├── auth.py     # Auth Routes (Register, Login, Me)
+│   │   │   │   │   ├── chat.py     # Chat Routes (Streaming completions)
+│   │   │   │   │   └── session.py  # Conversational session management
+│   │   │   │   ├── dependencies.py # JWT Decoder & get_current_user
+│   │   │   │   └── router.py  # Unified API Route compilation
 │   │   │   ├── config/        # Environment Configuration (settings.py)
-│   │   │   ├── core/          # App Security, Middleware & Core Helpers
-│   │   │   ├── db/            # Database Models & Connections
-│   │   │   ├── models/        # SQLAlchemy Models (DB tables)
+│   │   │   ├── core/          # Security, token signing & constants
+│   │   │   │   ├── constants.py
+│   │   │   │   └── security.py     # Bcrypt & Access Token (JWT) tools
+│   │   │   ├── db/            # Database Connections
+│   │   │   │   ├── database.py     # SQLAlchemy Base & Engine
+│   │   │   │   ├── dependencies.py # get_db session generator
+│   │   │   │   └── session.py      # SessionLocal maker
+│   │   │   ├── models/        # Database SQLAlchemy Models
+│   │   │   │   ├── chat_session.py # ChatSession table
+│   │   │   │   ├── message.py      # Message log table
+│   │   │   │   └── user.py         # User credentials table
 │   │   │   ├── schemas/       # Pydantic Schemas (validation)
-│   │   │   ├── services/      # Service Layer (OllamaService, etc.)
-│   │   │   └── main.py        # Backend FastAPI Entry Point
+│   │   │   │   ├── chat.py         # ChatRequest & ChatResponse schemas
+│   │   │   │   ├── chat_session.py # SessionCreate & SessionResponse schemas
+│   │   │   │   └── user.py         # UserCreate & TokenResponse schemas
+│   │   │   ├── services/      # Service Layer (Business Logic)
+│   │   │   │   ├── auth_service.py # User registration & verification
+│   │   │   │   ├── chat_service.py # Session CRUD operations
+│   │   │   │   └── ollama_service.py # Local LLM streaming handler
+│   │   │   └── main.py        # Backend FastAPI Entry Point & CORS Setup
 │   │   ├── .venv/             # Python Virtual Environment
 │   │   ├── pyproject.toml     # Backend dependencies (managed via uv)
 │   │   ├── uv.lock            # Backend Lockfile
@@ -76,6 +102,45 @@ local-ai-inference-platform/
 
 ---
 
+## 🗄️ Database Architecture & Schemas
+
+The application persists state locally using a relational SQLite database file (`local_ai.db`). The tables and relations are managed through SQLAlchemy models:
+
+```mermaid
+erDiagram
+    users {
+        int id PK
+        string email UK
+        string hashed_password
+    }
+    chat_sessions {
+        int id PK
+        string title
+        int user_id FK
+        datetime created_at
+    }
+    messages {
+        int id PK
+        int session_id FK
+        string role
+        string content
+        datetime created_at
+    }
+
+    users ||--o{ chat_sessions : "owns"
+    chat_sessions ||--o{ messages : "contains"
+```
+
+1. **Users (`users` table):**
+   * Manages unique emails and secure password representations hashed via bcrypt.
+   * Cascade-deletes all owned `chat_sessions` and `messages` if a user is deleted.
+2. **Chat Sessions (`chat_sessions` table):**
+   * Stores conversational threads. Includes a timezone-aware creation UTC timestamp.
+3. **Messages (`messages` table):**
+   * Individual conversation turns containing a role (`user`, `assistant`, `system`) and raw text content.
+
+---
+
 ## 🛠️ Technology Stack
 
 | Component | Technology | Version | Purpose |
@@ -84,7 +149,8 @@ local-ai-inference-platform/
 | **Dependency Manager** | `uv` | Latest | Extremely fast Python dependency resolver and installer |
 | **Settings Management** | Pydantic Settings | `^2.13.0` | Strongly-typed configuration with environment validation |
 | **Inference Client** | Ollama Python SDK | `^0.6.2` | Interfaces directly with local Ollama daemon |
-| **Database ORM** | SQLAlchemy, Alembic | Latest | Database schemas, connections, and migrations |
+| **Database ORM** | SQLAlchemy | Latest | Database schemas, connections, and sessions |
+| **Security Encryption** | Bcrypt, Python-Jose | Latest | Hashing passwords and cryptographically signing JWTs |
 | **Frontend Core** | React | `^19.2.6` | Client UI rendering |
 | **Build Tool** | Vite, TypeScript | Latest | Ultra-fast local development server and compilation |
 | **Package Manager** | `pnpm` | Latest | Workspace monorepo dependency caching |
@@ -105,6 +171,7 @@ Backend configurations are managed securely using environment variables located 
 * `JWT_SECRET_KEY`: Secret used to sign user auth tokens.
 * `JWT_ALGORITHM`: Cryptographic signature format (Defaults to `"HS256"`).
 * `ACCESS_TOKEN_EXPIRE_MINUTES`: Expiration time for login tokens.
+* `DATABASE_URL`: Connection string for SQLAlchemy (Defaults to `sqlite:///./local_ai.db`).
 
 > [!IMPORTANT]
 > **Static Type Resolution (Pylance):**
@@ -130,6 +197,7 @@ The API leverages the Python interpreter inside `apps/api/.venv/`.
    ```bash
    uvicorn app.main:app --reload
    ```
+*(Note: The database `local_ai.db` will automatically initialize its tables upon backend launch)*
 
 ### 3. React Frontend
 The web interface is managed via `pnpm`.
@@ -146,7 +214,8 @@ The web interface is managed via `pnpm`.
 ---
 
 ## 🔮 Roadmap & Future Scope
-- [ ] Add Alembic DB migration paths for user management and chat history persistence.
-- [ ] Integrate React Query on the frontend for streaming state updates.
+- [x] Create core schemas and relational tables for session preservation.
+- [x] Configure JWT bearer-auth and user registrations.
+- [ ] Implement robust user session controls and history loading on the frontend.
 - [ ] Write benchmarking scripts under `experiments/` to capture tokens per second for local models.
 - [ ] Dockerize both services inside `docker-compose.yml` for unified distribution.
