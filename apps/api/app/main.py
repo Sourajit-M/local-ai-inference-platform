@@ -8,8 +8,10 @@ from app.api.routes.auth import router as auth_router
 import app.models.user
 import app.models.chat_session
 import app.models.message
+import app.models.experiment
 
 from app.api.routes.session import router as session_router
+from app.api.routes.experiments import router as experiment_router
 
 import ollama
 from app.config.settings import settings
@@ -39,6 +41,12 @@ app.include_router(
   session_router,
   prefix="/api/chat",
   tags=["chat"],
+)
+
+app.include_router(
+  experiment_router,
+  prefix="/api",
+  tags=["experiments"]
 )
 
 @app.get("/health")

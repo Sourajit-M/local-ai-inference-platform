@@ -1,6 +1,10 @@
+import time
+
 from fastapi import APIRouter, Depends, HTTPException
 
 from sqlalchemy.orm import Session
+
+from app.config.settings import settings
 
 from app.api.dependencies import get_current_user
 from app.db.dependencies import get_db
@@ -16,6 +20,7 @@ from app.schemas.message import (
 
 from app.services.chat_service import ChatService
 from app.services.ollama_service import OllamaService
+from app.services.experiment_service import ExperimentService
 
 router = APIRouter()
 
@@ -94,8 +99,14 @@ def chat(
     request.content,
   )
 
+  start_time = time.perf_counter()
+
   response = OllamaService.chat(
     request.content
+  )
+
+  latency = (
+    time.perf_counter() - start_time
   )
 
   ChatService.create_message(
@@ -103,6 +114,15 @@ def chat(
     session_id,
     "assistant",
     response,
+  )
+
+  ExperimentService.create_experiment(
+    db =db,
+    user_id=current_user.id,
+    model_name=settings.MODEL_NAME,
+    prompt_length=len(request.content),
+    response_length=len(response),
+    latency_seconds=latency,
   )
 
   return {
