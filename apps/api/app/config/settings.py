@@ -22,5 +22,6 @@ class Settings(BaseSettings):
     extra="ignore"
   )
 
+  DEFAULT_TEMPERATURE: float = 0.0
 
 settings: Settings = Settings()

@@ -12,6 +12,9 @@ import app.models.experiment
 
 from app.api.routes.session import router as session_router
 from app.api.routes.experiments import router as experiment_router
+from app.api.routes.structured import (
+  router as structured_router
+)
 
 import ollama
 from app.config.settings import settings
@@ -47,6 +50,12 @@ app.include_router(
   experiment_router,
   prefix="/api",
   tags=["experiments"]
+)
+
+app.include_router(
+  structured_router,
+  prefix="/api",
+  tags=["structured"],
 )
 
 @app.get("/health")

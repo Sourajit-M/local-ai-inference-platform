@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from sqlalchemy import DateTime, Float, ForeignKey, Integer, String
+from sqlalchemy import DateTime, Float, ForeignKey, Integer, String, Boolean
 
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +26,19 @@ class Experiment(Base):
 
   latency_seconds: Mapped[float] = mapped_column(Float)
 
+  temperature: Mapped[float] = mapped_column(Float)
+
+  validation_success: Mapped[bool] = mapped_column(
+    Boolean,
+    default=True,
+  )
+
+  retry_count: Mapped[int] = mapped_column(
+    Integer,
+    default=0,
+  )
+
   created_at: Mapped[datetime] = mapped_column(
     DateTime,
-    default=datetime.now(timezone.utc),
+    default=lambda: datetime.now(timezone.utc),
   )

@@ -3,7 +3,10 @@ from app.core.constants import MODEL_NAME
 
 class OllamaService:
   @staticmethod
-  def chat(message: str) -> str:
+  def chat(
+    message: str,
+    temperature: float = 0.0,
+  ) -> str:
     response = ollama.chat(
       model = MODEL_NAME,
       messages = [
@@ -12,6 +15,9 @@ class OllamaService:
           "content": message, 
         }
       ],
+      options={
+        "temperature": temperature,
+      },
     )
 
     return response["message"]["content"]

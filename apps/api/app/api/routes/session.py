@@ -123,6 +123,7 @@ def chat(
     prompt_length=len(request.content),
     response_length=len(response),
     latency_seconds=latency,
+    temperature=settings.DEFAULT_TEMPERATURE,
   )
 
   return {
