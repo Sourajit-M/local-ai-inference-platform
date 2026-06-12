@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from fastapi import Depends
+from pydantic import BaseModel
 
 from sqlalchemy.orm import Session
 
@@ -11,14 +12,21 @@ from app.services.benchmark_service import ( BenchmarkService )
 router = APIRouter()
 
 
-@router.post("/benchmarks/run")
+class RunBenchmarkRequest(BaseModel):
+    models: list[str]
+    temperature: float = 0.0
+
+@router.post("/benchmarks/compare")
 def run_benchmark(
+    request: RunBenchmarkRequest,
     db: Session = Depends(get_db),
     current_user=Depends(get_current_user),
 ):
     return BenchmarkService.run_benchmark(
         db=db,
         user_id=current_user.id,
+        models=request.models,
+        temperature=request.temperature,
     )
 
 

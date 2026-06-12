@@ -1,4 +1,7 @@
 import json
+import ollama
+from collections import defaultdict
+from fastapi import HTTPException
 from pathlib import Path
 
 from sqlalchemy.orm import Session
@@ -14,8 +17,27 @@ class BenchmarkService:
   def run_benchmark(
     db: Session,
     user_id: int,
-    temperature: float  = 0.0
+    models: list[str],
+    temperature: float  = 0.0,
   ):
+    try:
+        res = ollama.list()
+        models_list = res.get("models", []) if isinstance(res, dict) else getattr(res, "models", [])
+        available_models = []
+        for m in models_list:
+            if isinstance(m, dict):
+                val = m.get("model") or m.get("name")
+            else:
+                val = getattr(m, "model", None) or getattr(m, "name", None)
+            if val:
+                available_models.append(val)
+    except Exception:
+        available_models = []
+        
+    for model in models:
+      if model not in available_models:
+        raise HTTPException(status_code=400, detail=f"Model {model} not installed")
+
     dataset_path = (
       Path(__file__).parent.parent
       / "benchmarks"
@@ -30,82 +52,72 @@ class BenchmarkService:
     ) as f:
       prompts = json.load(f)
 
-    benchmark_results = []
+    all_results = {}
 
-    for item in prompts:
-      result = (
-        OllamaService.benchmark_chat(
-          message=item["prompt"],
-          temperature=temperature,
-        )
-      )
+    for model in models:
+        benchmark_results = []
+        for item in prompts:
+            result = (
+                OllamaService.benchmark_chat(
+                    model=model,
+                    message=item["prompt"],
+                    temperature=temperature,
+                )
+            )
 
-      benchmark_run = BenchmarkRun(
-        user_id=user_id,
-        model_name=settings.MODEL_NAME,
-        prompt_name=item["name"],
-        prompt_category=item["category"],
-        prompt_difficulty=item.get("difficulty", "unknown"),
-        prompt_length=len(item["prompt"]),
-        response_length=len(result["response"]),
-        temperature=temperature,
-        ttft_seconds=result["ttft"],
-        latency_seconds=result["latency"],
-        tokens_per_second=result[
-            "tokens_per_second"
-        ],
-      )
+            benchmark_run = BenchmarkRun(
+                user_id=user_id,
+                model_name=model,
+                prompt_name=item["name"],
+                prompt_category=item["category"],
+                prompt_difficulty=item.get("difficulty", "unknown"),
+                prompt_length=len(item["prompt"]),
+                response_length=len(result["response"]),
+                temperature=temperature,
+                ttft_seconds=result["ttft"],
+                latency_seconds=result["latency"],
+                tokens_per_second=result[
+                    "tokens_per_second"
+                ],
+            )
 
-      db.add(benchmark_run)
+            db.add(benchmark_run)
 
-      benchmark_results.append(
-        {
-          "prompt_name": item["name"],
-          "category": item["category"],
-          "ttft_seconds": result["ttft"],
-          "latency_seconds": result["latency"],
-          "tokens_per_second": result[
-              "tokens_per_second"
-          ],
-        }
-      )
+            benchmark_results.append(
+                {
+                    "prompt_name": item["name"],
+                    "category": item["category"],
+                    "ttft_seconds": result["ttft"],
+                    "latency_seconds": result["latency"],
+                    "tokens_per_second": result[
+                        "tokens_per_second"
+                    ],
+                }
+            )
 
-    db.commit()
+        db.commit()
 
-    total_runs = len(benchmark_results)
-    avg_ttft = (
-      sum(
-        r["ttft_seconds"]
-        for r in benchmark_results
-      )
-      / total_runs
-    )
+        total_runs = len(benchmark_results)
+        if total_runs > 0:
+            avg_ttft = sum(r["ttft_seconds"] for r in benchmark_results) / total_runs
+            avg_latency = sum(r["latency_seconds"] for r in benchmark_results) / total_runs
+            avg_tps = sum(r["tokens_per_second"] for r in benchmark_results) / total_runs
 
-    avg_latency = (
-      sum(
-        r["latency_seconds"]
-        for r in benchmark_results
-      )
-      / total_runs
-    )
+            all_results[model] = {
+                "average_ttft": round(avg_ttft, 4),
+                "average_latency": round(avg_latency, 4),
+                "average_tokens_per_second": round(avg_tps, 2),
+                "prompts_tested": total_runs
+            }
+        else:
+            all_results[model] = {
+                "average_ttft": 0.0,
+                "average_latency": 0.0,
+                "average_tokens_per_second": 0.0,
+                "prompts_tested": 0
+            }
 
-    avg_tps = (
-      sum(
-        r["tokens_per_second"]
-        for r in benchmark_results
-      )
-      / total_runs
-    )
-
-    return {
-      "model_name" : settings.MODEL_NAME,
-      "temperature": temperature,
-      "total_prompts": total_runs,
-      "average_ttft": round(avg_ttft, 4),
-      "average_latency": round(avg_latency, 4),
-      "average_tokens_per_second": round(avg_tps, 2),
-      "runs": benchmark_results,
-    }
+    return all_results
   
 
   @staticmethod
@@ -126,38 +138,25 @@ class BenchmarkService:
         "message" : "No benchmark runs found"
       }
     
-    avg_ttft = (
-      sum(
-        r.ttft_seconds
-        for r in runs
-      )
-      / len(runs)
-    )
+    grouped = defaultdict(list)
+    for r in runs:
+        grouped[r.model_name].append(r)
+        
+    summary = {}
+    for model, model_runs in grouped.items():
+        total_runs = len(model_runs)
+        avg_ttft = sum(r.ttft_seconds for r in model_runs) / total_runs
+        avg_latency = sum(r.latency_seconds for r in model_runs) / total_runs
+        avg_tps = sum(r.tokens_per_second for r in model_runs) / total_runs
+        
+        summary[model] = {
+            "average_ttft": round(avg_ttft, 4),
+            "average_latency": round(avg_latency, 4),
+            "average_tokens_per_second": round(avg_tps, 2),
+            "prompts_tested": total_runs
+        }
 
-    avg_latency = (
-      sum(
-        r.latency_seconds
-        for r in runs
-      )
-      / len(runs)
-    )
-
-    avg_tps = (
-      sum(
-        r.tokens_per_second
-        for r in runs
-      )
-      / len(runs)
-    )
-
-
-    return {
-      "model_name": settings.MODEL_NAME,
-      "total_runs": len(runs),
-      "average_ttft": round(avg_ttft, 4),
-      "average_latency": round(avg_latency, 4),
-      "average_tokens_per_second": round(avg_tps, 2)
-    }
+    return summary
   
   @staticmethod
   def get_runs(

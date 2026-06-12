@@ -7,9 +7,11 @@ class OllamaService:
   def chat(
     message: str,
     temperature: float = 0.0,
+    model_name : str | None = None,
   ) -> str:
+    model = model_name or MODEL_NAME
     response = ollama.chat(
-      model = MODEL_NAME,
+      model = model,
       messages = [
         {
           "role" : "user",
@@ -44,13 +46,14 @@ class OllamaService:
 
   @staticmethod
   def benchmark_chat(
+    model : str,
     message: str,
     temperature: float = 0.0
   ):
     start_time = time.perf_counter()
 
     stream = ollama.chat(
-      model=MODEL_NAME,
+      model=model,
       messages=[
         {
           "role": "user",
@@ -109,5 +112,3 @@ class OllamaService:
       "estimated_tokens": estimated_token_count,
       "tokens_per_second": tokens_per_second,
     }
-  
-  

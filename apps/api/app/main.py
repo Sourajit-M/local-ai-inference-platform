@@ -15,6 +15,9 @@ from app.api.routes.experiments import router as experiment_router
 from app.api.routes.structured import (
   router as structured_router
 )
+from app.api.routes.benchmarks import (
+  router as benchmarks_router
+)
 
 import ollama
 from app.config.settings import settings
@@ -58,6 +61,12 @@ app.include_router(
   structured_router,
   prefix="/api",
   tags=["structured"],
+)
+
+app.include_router(
+  benchmarks_router,
+  prefix="/api",
+  tags=["benchmarks"],
 )
 
 @app.get("/health")
