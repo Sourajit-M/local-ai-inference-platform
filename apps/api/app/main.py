@@ -19,6 +19,8 @@ from app.api.routes.structured import (
 import ollama
 from app.config.settings import settings
 
+import app.models.benchmark_run
+
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(

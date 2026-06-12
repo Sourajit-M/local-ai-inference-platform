@@ -1,0 +1,32 @@
+[
+  {
+    "name": "reasoning_1",
+    "category": "reasoning",
+    "difficulty": "easy",
+    "prompt": "If a train travels 60 km in 1 hour, how far will it travel in 3 hours?"
+  },
+  {
+    "name": "reasoning_2",
+    "category": "reasoning",
+    "difficulty": "medium",
+    "prompt": "What comes next: 2, 4, 8, 16?"
+  },
+  {
+    "name": "coding_1",
+    "category": "coding",
+    "difficulty": "medium",
+    "prompt": "Write a Python function to reverse a string."
+  },
+  {
+    "name": "summarization_1",
+    "category": "summarization",
+    "difficulty": "easy",
+    "prompt": "Summarize the purpose of object oriented programming."
+  },
+  {
+    "name": "extraction_1",
+    "category": "extraction",
+    "difficulty": "easy",
+    "prompt": "John has a meeting tomorrow at 10 AM and needs to submit a report by Friday."
+  }
+]
