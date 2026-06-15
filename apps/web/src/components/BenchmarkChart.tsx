@@ -36,7 +36,7 @@ export default function BenchmarkChart({
 
           <Bar
             dataKey={dataKey}
-            radius={[4, 4, 0, 0]}
+            radius={[8, 8, 0, 0]}
           />
         </BarChart>
       </ResponsiveContainer>
