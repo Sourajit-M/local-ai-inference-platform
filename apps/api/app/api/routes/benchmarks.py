@@ -15,6 +15,7 @@ router = APIRouter()
 class RunBenchmarkRequest(BaseModel):
     models: list[str]
     temperature: float = 0.0
+    warmup: bool = True
 
 @router.post("/benchmarks/compare")
 def run_benchmark(
@@ -27,6 +28,7 @@ def run_benchmark(
         user_id=current_user.id,
         models=request.models,
         temperature=request.temperature,
+        warmup=request.warmup,
     )
 
 

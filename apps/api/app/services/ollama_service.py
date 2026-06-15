@@ -112,3 +112,18 @@ class OllamaService:
       "estimated_tokens": estimated_token_count,
       "tokens_per_second": tokens_per_second,
     }
+  
+  @staticmethod
+  def warmup_model(model_name: str):
+    ollama.chat(
+      model=model_name,
+      messages=[
+        {
+          "role": "user",
+          "content": "hi"
+        }
+      ],
+      options={
+        "temperature": 0.0
+      }
+    )

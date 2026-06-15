@@ -19,6 +19,7 @@ class BenchmarkService:
     user_id: int,
     models: list[str],
     temperature: float  = 0.0,
+    warmup: bool = True
   ):
     try:
         res = ollama.list()
@@ -56,6 +57,9 @@ class BenchmarkService:
 
     for model in models:
         benchmark_results = []
+        if warmup:
+          OllamaService.warmup_model(model)
+
         for item in prompts:
             result = (
                 OllamaService.benchmark_chat(
@@ -107,7 +111,9 @@ class BenchmarkService:
                 "average_ttft": round(avg_ttft, 4),
                 "average_latency": round(avg_latency, 4),
                 "average_tokens_per_second": round(avg_tps, 2),
-                "prompts_tested": total_runs
+                "prompts_tested": total_runs,
+                "temperature": temperature,
+                "warmup": warmup,
             }
         else:
             all_results[model] = {
