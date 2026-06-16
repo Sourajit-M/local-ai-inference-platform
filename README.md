@@ -1,5 +1,12 @@
 # 🤖 Local AI Inference Platform (Monorepo)
 
+![React](https://img.shields.io/badge/React-19-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.136-green)
+![Ollama](https://img.shields.io/badge/Ollama-Local%20Inference-black)
+![License](https://img.shields.io/badge/License-MIT-yellow)
+
+🌐 Live Demo: https://local-ai-inference-platform.vercel.app
+
 A **fully local, privacy-first benchmarking and inference platform** for open-source LLMs. This monorepo lets you register accounts, run structured benchmarks across multiple Ollama models simultaneously, compare performance metrics in a polished analytics dashboard, and stream real-time chat completions — all without any cloud dependencies.
 
 ---
