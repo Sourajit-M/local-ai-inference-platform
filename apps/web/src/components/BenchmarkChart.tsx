@@ -9,7 +9,7 @@ import {
 } from "recharts";
 
 type Props = {
-  data: Record<string, unknown>[];
+  data: Record<string, any>[];
   dataKey: string;
 };
 

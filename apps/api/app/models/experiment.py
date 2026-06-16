@@ -42,3 +42,10 @@ class Experiment(Base):
     DateTime,
     default=lambda: datetime.now(timezone.utc),
   )
+
+  def __repr__(self) -> str:
+    return (
+      f"<Experiment(model_name={self.model_name}, "
+      f"validation_success={self.validation_success}, "
+      f"retry_count={self.retry_count})>"
+    )

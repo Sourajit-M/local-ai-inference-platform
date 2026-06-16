@@ -52,3 +52,5 @@ def get_benchmark_runs(
         db=db,
         user_id=current_user.id,
     )
+
+__all__ = ["router", "run_benchmark", "get_benchmark_summary", "get_benchmark_runs"]

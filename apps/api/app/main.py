@@ -26,8 +26,10 @@ import app.models.benchmark_run
 
 Base.metadata.create_all(bind=engine)
 
+print(f"Starting {settings.APP_NAME} connecting to Ollama at {settings.OLLAMA_HOST}...")
+
 app = FastAPI(
-  title="Local AI Inference Platform",
+  title=settings.APP_NAME,
   version="0.1.0",
 )
 
@@ -86,3 +88,5 @@ def health():
       "status" : "unhealthy",
       "error": str(e)
     }
+
+__all__ = ["app", "health"]

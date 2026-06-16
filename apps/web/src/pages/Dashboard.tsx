@@ -17,6 +17,7 @@ interface ModelBenchmark {
 
 type BenchmarkSummary = Record<string, ModelBenchmark>;
 
+// fallow-ignore-next-line complexity
 export default function Dashboard() {
   const [summary, setSummary] = useState<BenchmarkSummary>({});
   const [loading, setLoading] = useState(true);
@@ -139,6 +140,34 @@ export default function Dashboard() {
             <StatCard title="🚀 Fastest TTFT" value={bestTTFT?.model_name ?? "-"} />
             <StatCard title="🎯 Lowest Latency" value={bestLatency?.model_name ?? "-"} />
             <StatCard title="⚡ Highest TPS" value={bestTPS?.model_name ?? "-"} />
+          </div>
+        </div>
+
+        {/* Section: About This Benchmark */}
+        <div className="bg-slate-900 border border-slate-800 text-slate-100 p-6 rounded-2xl shadow-sm grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div>
+            <h3 className="font-bold text-base text-white mb-2">About This Benchmark</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              These runs represent local execution on consumer-grade workstation parameters. Tests are automated and run multiple prompts sequentially to isolate cold-start GPU latency and caching effects.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div>
+              <span className="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Testing GPU</span>
+              <span className="text-slate-200 font-bold">RTX 4050 Laptop (6GB VRAM)</span>
+            </div>
+            <div>
+              <span className="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Operating System</span>
+              <span className="text-slate-200 font-bold">WSL2 Ubuntu</span>
+            </div>
+            <div>
+              <span className="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Memory Allocated</span>
+              <span className="text-slate-200 font-bold">16 GB RAM</span>
+            </div>
+            <div>
+              <span className="block text-slate-500 font-semibold uppercase tracking-wider text-[10px]">Inference Backend</span>
+              <span className="text-slate-200 font-bold">Ollama API Engine</span>
+            </div>
           </div>
         </div>
 

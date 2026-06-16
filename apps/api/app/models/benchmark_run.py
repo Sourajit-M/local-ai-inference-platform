@@ -72,3 +72,11 @@ class BenchmarkRun(Base):
         DateTime,
         default=datetime.utcnow,
     )
+
+    def __repr__(self) -> str:
+        return (
+            f"<BenchmarkRun(model_name={self.model_name}, "
+            f"prompt_name={self.prompt_name}, "
+            f"prompt_category={self.prompt_category}, "
+            f"prompt_difficulty={self.prompt_difficulty})>"
+        )

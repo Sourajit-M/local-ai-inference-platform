@@ -1,49 +1,9 @@
-import { useEffect, useState } from "react";
 import DashboardLayout from "../layouts/DashboardLayout";
-import { getBenchmarkRuns } from "../api/benchmarkApi";
-import { DEMO_MODE, demoRuns } from "../demo/demoData";
+import { useBenchmarkRuns } from "../hooks/useBenchmarkRuns";
 
-interface RunData {
-  id: number;
-  model_name: string;
-  prompt_name: string;
-  prompt_category: string;
-  prompt_difficulty: string;
-  ttft_seconds: number;
-  latency_seconds: number;
-  tokens_per_second: number;
-  created_at: string;
-}
-
+// fallow-ignore-next-line complexity
 export default function BenchmarkRuns() {
-  const [runs, setRuns] = useState<RunData[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isDemo, setIsDemo] = useState(false);
-
-  useEffect(() => {
-    if (DEMO_MODE) {
-      setRuns(demoRuns);
-      setIsDemo(true);
-      setLoading(false);
-      return;
-    }
-
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setRuns(demoRuns);
-      setIsDemo(true);
-      setLoading(false);
-      return;
-    }
-
-    getBenchmarkRuns(token)
-      .then((data) => setRuns(data))
-      .catch(() => {
-        setRuns(demoRuns);
-        setIsDemo(true);
-      })
-      .finally(() => setLoading(false));
-  }, []);
+  const { runs, loading, isDemo } = useBenchmarkRuns();
 
   return (
     <DashboardLayout

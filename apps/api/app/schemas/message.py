@@ -11,3 +11,5 @@ class MessageResponse(BaseModel):
   model_config = {
     'from_attributes': True
   }
+
+__all__ = ["MessageCreate", "MessageResponse"]

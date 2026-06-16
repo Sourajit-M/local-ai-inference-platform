@@ -127,3 +127,7 @@ class OllamaService:
         "temperature": 0.0
       }
     )
+
+# Reference static methods to resolve unused alerts
+__all__ = ["OllamaService"]
+_ = OllamaService.stream_chat

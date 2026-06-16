@@ -35,6 +35,58 @@ local-ai-inference-platform/
 
 ---
 
+## 🏗️ System Architecture
+
+```mermaid
+graph TD
+    %% Styling
+    classDef client fill:#e0e7ff,stroke:#6366f1,stroke-width:2px,color:#1e1b4b;
+    classDef server fill:#f5f3ff,stroke:#8b5cf6,stroke-width:2px,color:#2e1065;
+    classDef db fill:#ecfdf5,stroke:#10b981,stroke-width:2px,color:#064e3b;
+    classDef engine fill:#fff7ed,stroke:#f97316,stroke-width:2px,color:#7c2d12;
+    classDef hw fill:#fff1f2,stroke:#f43f5e,stroke-width:2px,color:#881337;
+
+    subgraph Client ["Client Side (Browser)"]
+        A["React SPA (Vite + TypeScript)"]:::client
+        B["Recharts Visualizations"]:::client
+        C["Local JWT Storage"]:::client
+    end
+
+    subgraph Backend ["Server Side (Private Server / Local Host)"]
+        D["FastAPI Application"]:::server
+        E["JWT Auth Guard"]:::server
+        F["Inference Benchmarker"]:::server
+    end
+
+    subgraph Storage ["Persistent Storage"]
+        G[("SQLite Database<br/>(local_ai.db)")]:::db
+    end
+
+    subgraph Inference ["Local Inference Engine"]
+        H["Ollama REST Engine"]:::engine
+        I["Qwen 2.5 3B"]:::engine
+        J["Llama 3.2 3B"]:::engine
+        K["Phi 3 Mini"]:::engine
+    end
+
+    subgraph Hardware ["Execution Host"]
+        L["NVIDIA RTX 4050 (6GB VRAM)"]:::hw
+        M["WSL2 Ubuntu Pipeline"]:::hw
+    end
+
+    %% Connections
+    A <-->|HTTP REST / SSE Streaming| D
+    D <-->|SQLAlchemy ORM| G
+    F <-->|REST Requests| H
+    H -->|Loads parameters| I
+    H -->|Loads parameters| J
+    H -->|Loads parameters| K
+    I & J & K -->|GPU Accelerated Runs| L
+    L -->|Virtualized Environment| M
+```
+
+---
+
 ## ⚙️ Development Prerequisites
 
 Ensure you have the following installed on your machine:
